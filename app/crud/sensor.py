@@ -1,11 +1,19 @@
 from sqlalchemy.orm import Session
+
 from app.models.sensor import Sensor
 
-def get_sensor(db: Session, sensor_id: int):
+
+def get_sensor(db: Session, sensor_id: int) -> Sensor | None:
     return db.query(Sensor).filter(Sensor.id == sensor_id).first()
 
-def get_sensor_by_codigo(db: Session, codigo: str):
+
+def get_sensor_by_codigo(db: Session, codigo: str) -> Sensor | None:
     return db.query(Sensor).filter(Sensor.codigo == codigo).first()
 
-def get_sensores(db: Session, skip: int = 0, limit: int = 100):
+
+def get_sensores(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[Sensor]:
     return db.query(Sensor).offset(skip).limit(limit).all()

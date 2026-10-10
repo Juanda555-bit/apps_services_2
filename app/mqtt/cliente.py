@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from datetime import datetime, timezone
@@ -26,15 +25,15 @@ class MQTTConsumer:
     def __init__(self) -> None:
         self._broker = os.getenv("MQTT_BROKER", "").strip()
         self._port = int(os.getenv("MQTT_PORT", "1883"))
-        self._topic = os.getenv("MQTT_TOPIC", "iot/sensors/TEST-001/data")
-        self._username = os.getenv("MQTT_USERNAME")
-        self._password = os.getenv("MQTT_PASSWORD")
+        self._topic = os.getenv("MQTT_TOPIC", "iot/sensors/TEST-001/data").strip()
+        self._username = os.getenv("MQTT_USERNAME", "").strip()
+        self._password = os.getenv("MQTT_PASSWORD", "").strip()
         self._keepalive = int(os.getenv("MQTT_KEEPALIVE", "60"))
         self._started = False
         self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
         if self._username:
-            self._client.username_pw_set(self._username, self._password or "")
+            self._client.username_pw_set(self._username, self._password)
 
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
@@ -89,9 +88,8 @@ class MQTTConsumer:
         message: MQTTMessage,
     ) -> None:
         try:
-            raw_payload = json.loads(message.payload.decode("utf-8"))
-            payload = PayloadMQTT.model_validate(raw_payload)
-        except (UnicodeDecodeError, json.JSONDecodeError, ValidationError) as error:
+            payload = PayloadMQTT.model_validate_json(message.payload)
+        except ValidationError as error:
             logger.warning("Payload MQTT inválido en %s: %s", message.topic, error)
             return
 
@@ -103,8 +101,9 @@ class MQTTConsumer:
             return
 
         timestamp_utc = payload.timestamp.astimezone(timezone.utc)
-        db: Session = SessionLocal()
+        db: Session | None = None
         try:
+            db = SessionLocal()
             sensor = get_sensor_by_codigo(db, payload.sensor_id)
             if sensor is None or not sensor.activo:
                 logger.warning(
@@ -154,12 +153,26 @@ class MQTTConsumer:
                 payload.sensor_id,
             )
         except SQLAlchemyError:
-            db.rollback()
+            if db is not None:
+                try:
+                    db.rollback()
+                except SQLAlchemyError:
+                    logger.exception(
+                        "Error revirtiendo transacción MQTT del sensor %s",
+                        payload.sensor_id,
+                    )
             logger.exception(
                 "Error de base de datos procesando mensaje MQTT del sensor %s",
                 payload.sensor_id,
             )
         finally:
-            db.close()
+            if db is not None:
+                try:
+                    db.close()
+                except SQLAlchemyError:
+                    logger.exception(
+                        "Error cerrando sesión de base de datos del sensor %s",
+                        payload.sensor_id,
+                    )
 
 mqtt_client = MQTTConsumer()

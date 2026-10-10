@@ -1,27 +1,17 @@
-from datetime import datetime
-from typing import Dict
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime, timedelta, timezone
 
-class SensorOut(BaseModel):
-    id: int
-    codigo: str
-    nombre: str
-    categoria: str
-    ubicacion: str
-    activo: bool
-    fecha_registro: datetime
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    StrictFloat,
+    StrictStr,
+    computed_field,
+    field_validator,
+)
 
-    model_config = ConfigDict(from_attributes=True)
+COLOMBIA_TIMEZONE = timezone(timedelta(hours=-5))
 
-class SensorMagnitudOut(BaseModel):
-    id: int
-    sensor_id: int
-    magnitud: str
-    unidad: str
-    valor_minimo: float
-    valor_maximo: float
-
-    model_config = ConfigDict(from_attributes=True)
 
 class MedicionOut(BaseModel):
     id: int
@@ -31,11 +21,31 @@ class MedicionOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("timestamp_utc")
+    @classmethod
+    def normalize_timestamp_utc(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("timestamp_utc debe incluir información de zona horaria")
+        return value.astimezone(timezone.utc)
+
+    @computed_field(return_type=str)
+    @property
+    def timestamp_local(self) -> str:
+        return self.timestamp_utc.astimezone(COLOMBIA_TIMEZONE).isoformat(
+            timespec="seconds"
+        )
+
+
 class MeasurementValue(BaseModel):
-    value: float
-    unit: str
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    value: StrictFloat
+    unit: StrictStr
+
 
 class PayloadMQTT(BaseModel):
-    sensor_id: str
-    timestamp: datetime
-    measurements: Dict[str, MeasurementValue]
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    sensor_id: StrictStr
+    timestamp: AwareDatetime
+    measurements: dict[str, MeasurementValue]

@@ -1,10 +1,12 @@
 from pydantic import BaseModel, ConfigDict
 
+
 class SensorMagnitudBase(BaseModel):
     magnitud: str
     unidad: str
-    rango_min: float
-    rango_max: float
+    valor_minimo: float
+    valor_maximo: float
+
 
 class SensorMagnitudOut(SensorMagnitudBase):
     id: int
