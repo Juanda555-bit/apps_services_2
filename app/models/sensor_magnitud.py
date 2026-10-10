@@ -17,9 +17,8 @@ class SensorMagnitud(Base):
     sensor_id: Mapped[int] = mapped_column(ForeignKey("sensores.id", ondelete="CASCADE"), nullable=False)
     magnitud: Mapped[str] = mapped_column(String(50), nullable=False)
     unidad: Mapped[str] = mapped_column(String(20), nullable=False)
-    rango_min: Mapped[float] = mapped_column(Float, nullable=False)
-    rango_max: Mapped[float] = mapped_column(Float, nullable=False)
-
+    valor_minimo: Mapped[float] = mapped_column(Float, nullable=False)
+    valor_maximo: Mapped[float] = mapped_column(Float, nullable=False)
     sensor: Mapped["Sensor"] = relationship(back_populates="sensor_magnitudes")
     mediciones: Mapped[list["Medicion"]] = relationship(
         back_populates="sensor_magnitud",
