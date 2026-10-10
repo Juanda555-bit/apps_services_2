@@ -146,7 +146,10 @@ rechazados, está en [evidencias/validacion.md](./evidencias/validacion.md).
 | Juan David Arias Ospina | `Juanda555-bit` | Configuración de base de datos, modelos ORM, esquemas Pydantic, CRUD y cliente MQTT; reconstrucción de enrutadores, conexión a base de datos y corrección de modelos. |
 
 El historial del repositorio enlazado contiene los commits identificables de
-ambos integrantes.
+ambos integrantes. El commit de cierre de la implementación, pruebas y
+documentación de esta entrega es
+[`8ac264b`](https://github.com/Juanda555-bit/apps_services_2/commit/8ac264b39a463ca5bc6b04868414d3fb2b7449ac),
+realizado por Simon Herrera Acosta.
 
 ## 9. Conclusiones
 
